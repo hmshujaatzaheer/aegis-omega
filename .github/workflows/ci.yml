@@ -150,7 +150,7 @@ jobs:
       
       - name: Build Sphinx documentation
         run: |
-          cd docs && make html || echo "Docs build skipped"
+          echo "Documentation build skipped - no docs folder configured yet"
       
       - name: Upload documentation
         uses: actions/upload-artifact@v3
@@ -237,3 +237,4 @@ jobs:
       #   uses: isabelle-prover/isabelle-build-action@v1
       #   with:
       #     session: AEGIS_Omega
+
