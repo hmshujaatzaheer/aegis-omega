@@ -1,4 +1,4 @@
-"""
+﻿"""
 EU AI Act MFOTL Specifications
 ==============================
 
@@ -17,16 +17,7 @@ License: MIT
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
-from .aegis import (
-    MFOTLFormula,
-    Predicate,
-    Negation,
-    Conjunction,
-    Disjunction,
-    Eventually,
-    Always,
-    Implication,
-)
+
 
 
 # =============================================================================
@@ -75,7 +66,7 @@ class Article9_RiskManagement:
         """
         Risk assessment must be documented before deployment.
         
-        MFOTL: □[0,∞) (deploy(S) → ∃D. risk_assessment(S, D) ∧ D < deploy_time)
+        MFOTL: â–¡[0,âˆž) (deploy(S) â†’ âˆƒD. risk_assessment(S, D) âˆ§ D < deploy_time)
         """
         return Always(
             Implication(
@@ -91,7 +82,7 @@ class Article9_RiskManagement:
         """
         Risk management shall be continuous throughout lifecycle.
         
-        MFOTL: □[0,3600000] (active(S) → ◇[0,3600000] risk_review(S))
+        MFOTL: â–¡[0,3600000] (active(S) â†’ â—‡[0,3600000] risk_review(S))
         """
         return Always(
             Implication(
@@ -139,7 +130,7 @@ class Article12_Logging:
         """
         Every AI action must be logged within 1 second.
         
-        MFOTL: □[0,∞) (ai_action(S, A, C) → ◇[0,1000] log_entry(S, A, T))
+        MFOTL: â–¡[0,âˆž) (ai_action(S, A, C) â†’ â—‡[0,1000] log_entry(S, A, T))
         """
         return Always(
             Implication(
@@ -159,7 +150,7 @@ class Article12_Logging:
         """
         Complete audit trail must be maintained.
         
-        MFOTL: □[0,∞) (log_entry(S, A, T) → ◇[0,5000] audit_trail(S, A, C, T))
+        MFOTL: â–¡[0,âˆž) (log_entry(S, A, T) â†’ â—‡[0,5000] audit_trail(S, A, C, T))
         """
         return Always(
             Implication(
@@ -179,7 +170,7 @@ class Article12_Logging:
         """
         Logs must not be tampered with.
         
-        MFOTL: □[0,∞) (log_entry(S, A, T) → □[0,∞) ¬tampered(S, A, T))
+        MFOTL: â–¡[0,âˆž) (log_entry(S, A, T) â†’ â–¡[0,âˆž) Â¬tampered(S, A, T))
         """
         return Always(
             Implication(
@@ -227,7 +218,7 @@ class Article13_Transparency:
         """
         Users must be notified they are interacting with AI.
         
-        MFOTL: □[0,∞) (user_query(U, Q) → ◇[0,100] transparency_notice(U))
+        MFOTL: â–¡[0,âˆž) (user_query(U, Q) â†’ â—‡[0,100] transparency_notice(U))
         """
         return Always(
             Implication(
@@ -247,7 +238,7 @@ class Article13_Transparency:
         """
         Outputs must be accompanied by explanations when requested.
         
-        MFOTL: □[0,∞) (explanation_requested(U, O) → ◇[0,30000] explanation_provided(U, O))
+        MFOTL: â–¡[0,âˆž) (explanation_requested(U, O) â†’ â—‡[0,30000] explanation_provided(U, O))
         """
         return Always(
             Implication(
@@ -313,8 +304,8 @@ class Article14_HumanOversight:
         """
         High-risk decisions must notify human overseer.
         
-        MFOTL: □[0,∞) (high_risk_decision(D, R) ∧ R > 0.8 → 
-                       ◇[0,60000] human_notified(H, D))
+        MFOTL: â–¡[0,âˆž) (high_risk_decision(D, R) âˆ§ R > 0.8 â†’ 
+                       â—‡[0,60000] human_notified(H, D))
         """
         return Always(
             Implication(
@@ -337,8 +328,8 @@ class Article14_HumanOversight:
         """
         Critical decisions require human approval.
         
-        MFOTL: □[0,∞) (critical_decision(D) → 
-                       ◇[0,300000] (human_approval(H, D) ∨ human_rejection(H, D)))
+        MFOTL: â–¡[0,âˆž) (critical_decision(D) â†’ 
+                       â—‡[0,300000] (human_approval(H, D) âˆ¨ human_rejection(H, D)))
         """
         return Always(
             Implication(
@@ -361,8 +352,8 @@ class Article14_HumanOversight:
         """
         Humans must be able to override AI decisions.
         
-        MFOTL: □[0,∞) (override_requested(H, D) → 
-                       ◇[0,10000] override_executed(H, D))
+        MFOTL: â–¡[0,âˆž) (override_requested(H, D) â†’ 
+                       â—‡[0,10000] override_executed(H, D))
         """
         return Always(
             Implication(
@@ -414,7 +405,7 @@ class Article15_Accuracy:
         """
         System must maintain declared accuracy levels.
         
-        MFOTL: □[0,∞) (accuracy_check(S) → accuracy_within_bounds(S))
+        MFOTL: â–¡[0,âˆž) (accuracy_check(S) â†’ accuracy_within_bounds(S))
         """
         return Always(
             Implication(
@@ -430,7 +421,7 @@ class Article15_Accuracy:
         """
         System must resist adversarial inputs.
         
-        MFOTL: □[0,∞) (adversarial_input(I) → blocked(I))
+        MFOTL: â–¡[0,âˆž) (adversarial_input(I) â†’ blocked(I))
         """
         return Always(
             Implication(
@@ -446,8 +437,8 @@ class Article15_Accuracy:
         """
         Errors must be handled gracefully.
         
-        MFOTL: □[0,∞) (error_detected(S, E) → 
-                       ◇[0,1000] (error_logged(S, E) ∧ graceful_degradation(S)))
+        MFOTL: â–¡[0,âˆž) (error_detected(S, E) â†’ 
+                       â—‡[0,1000] (error_logged(S, E) âˆ§ graceful_degradation(S)))
         """
         return Always(
             Implication(
@@ -644,3 +635,4 @@ __all__ = [
     "MFOTLBuilder",
     "mfotl",
 ]
+
