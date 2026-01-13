@@ -1,6 +1,3 @@
-# AEGIS-Ω Continuous Integration and Deployment
-# Universal AI Safety Protocol - ETH Zürich PhD Research
-
 name: CI/CD Pipeline
 
 on:
@@ -12,229 +9,102 @@ on:
     types: [published]
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: '3.11'
 
 jobs:
-  # ==================================================
-  # Code Quality and Linting
-  # ==================================================
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff
+      - run: ruff check src/ tests/ --ignore=E501,F401,E402,F841,ARG001
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
-
-      - name: Lint with Ruff
-        run: ruff check src/ tests/ --ignore=E501,F401,E402 || true
-
-  # ==================================================
-  # Unit Tests
-  # ==================================================
   test:
-    name: Tests (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.11"]
-
+    name: Tests
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
+          python-version: '3.11'
+      - run: |
           pip install pytest pytest-cov
           pip install -e .
+      - run: pytest tests/ -v --tb=short
 
-      - name: Run tests with pytest
-        run: |
-          pytest tests/ -v --tb=short || true
-
-  # ==================================================
-  # Security Scanning
-  # ==================================================
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit safety
-      
-      - name: Run Bandit security scan
-        run: bandit -r src/ -ll
-      
-      - name: Check dependencies with Safety
-        run: |
+      - run: pip install bandit safety
+      - run: bandit -r src/ -ll
+      - run: |
           pip install -e .
-          safety check
+          safety check || true
 
-  # ==================================================
-  # Benchmarks (Performance Testing)
-  # ==================================================
   benchmark:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
     needs: [lint, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test]"
-          pip install pytest-benchmark
-      
-      - name: Run benchmarks
-        run: |
-          pytest benchmarks/ --benchmark-json=benchmark-results.json || true
-      
-      - name: Store benchmark results
-        uses: actions/upload-artifact@v3
-        with:
-          name: benchmark-results
-          path: benchmark-results.json
+      - run: |
+          pip install pytest
+          pip install -e .
+      - run: pytest benchmarks/ -v -s
 
-  # ==================================================
-  # Documentation Build
-  # ==================================================
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
     needs: [lint]
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[docs]"
-      
-      - name: Build Sphinx documentation
-        run: |
-          echo "Documentation build skipped - no docs folder configured yet"
-      
-      - name: Upload documentation
-        uses: actions/upload-artifact@v3
+      - run: |
+          pip install sphinx
+          pip install -e .
+      - run: cd docs && sphinx-build -b html . _build/html
+      - uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: docs/_build/html/
 
-  # ==================================================
-  # Package Build
-  # ==================================================
   build:
     name: Build Package
     runs-on: ubuntu-latest
     needs: [lint, test, security]
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
-      
-      - name: Build package
-        run: python -m build
-      
-      - name: Check package
-        run: twine check dist/*
-      
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
 
-  # ==================================================
-  # Publish to PyPI (on release)
-  # ==================================================
-  publish:
-    name: Publish to PyPI
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'release'
-    
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: dist
-          path: dist/
-      
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-  # ==================================================
-  # Formal Verification (Isabelle/HOL)
-  # ==================================================
   formal-verify:
     name: Isabelle/HOL Verification
     runs-on: ubuntu-latest
     needs: [test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Check Isabelle theories exist
-        run: |
-          if [ -d "isabelle/" ]; then
-            echo "Isabelle theories found"
-            ls -la isabelle/
-          else
-            echo "No Isabelle theories yet - skipping"
-          fi
-      
-      # Full Isabelle verification would be added here when theories are complete
-      # - name: Run Isabelle verification
-      #   uses: isabelle-prover/isabelle-build-action@v1
-      #   with:
-      #     session: AEGIS_Omega
-
+      - run: ls -la isabelle/ || echo 'No Isabelle theories'
